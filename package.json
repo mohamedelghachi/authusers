@@ -1,0 +1,24 @@
+{
+  "name": "authusers",
+  "version": "1.0.0",
+  "description": "Authentication users using JWT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nodejs",
+    "expressjs",
+    "mongoose",
+    "ejs"
+  ],
+  "author": "EL GHACHI",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.2",
+    "nodemon": "^3.1.0",
+    "validator": "^13.11.0"
+  }
+}
