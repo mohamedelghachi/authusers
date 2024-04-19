@@ -5,6 +5,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const User = require('./models/userModel.js')
+const auth = require('./middleware/auth')
 
 const app = express()
 app.use(express.json())
@@ -12,6 +13,10 @@ mongoose.connect('mongodb://localhost/authusers').
     then(() => console.log("Connection réussie")).
     catch(error => console.log(error));
 
+app.get('/users/me', auth, async (req, res) => {
+    // View logged in user profile
+    res.send(req.user)
+})
 app.get("/home", function (req, res) {
     res.send("Home page")
 })
@@ -20,9 +25,14 @@ app.post("/inscription", async function (req, res) {
     const user = req.body;
     let errors = {};
     try {
+        // Générer un jeton JWT
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        user.tokens = user.tokens.concat({ token })
+
         await User.create(user)
         const allUsers = await User.find();
-        res.status(200).json(allUsers);
+        res.status(200).json({ allUsers, token });
     } catch (error) {
         if (error.message.includes("user validation failed")) {
             Object.values(error.errors).forEach(({ properties }) => {
@@ -58,6 +68,9 @@ app.post('/connexion', async (req, res) => {
         // Générer un jeton JWT
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+        user.tokens = user.tokens.concat({ token })
+        await user.save()
+
         // Envoyer la réponse avec le jeton et les informations utilisateur
         res.json({
             token,
@@ -72,7 +85,6 @@ app.post('/connexion', async (req, res) => {
         res.status(500).json(err);
     }
 });
-
 
 app.listen(82, function () {
     console.log("listening ...")
