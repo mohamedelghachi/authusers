@@ -5,7 +5,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const User = require('./models/userModel.js')
-const auth = require('./middleware/auth')
+const isAuth = require('./middleware/auth.js')
 
 const app = express()
 app.use(express.json())
@@ -13,10 +13,6 @@ mongoose.connect('mongodb://localhost/authusers').
     then(() => console.log("Connection réussie")).
     catch(error => console.log(error));
 
-app.get('/users/me', auth, async (req, res) => {
-    // View logged in user profile
-    res.send(req.user)
-})
 app.get("/home", function (req, res) {
     res.send("Home page")
 })
@@ -25,14 +21,9 @@ app.post("/inscription", async function (req, res) {
     const user = req.body;
     let errors = {};
     try {
-        // Générer un jeton JWT
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        user.tokens = user.tokens.concat({ token })
-
         await User.create(user)
         const allUsers = await User.find();
-        res.status(200).json({ allUsers, token });
+        res.status(200).json(allUsers);
     } catch (error) {
         if (error.message.includes("user validation failed")) {
             Object.values(error.errors).forEach(({ properties }) => {
@@ -66,10 +57,7 @@ app.post('/connexion', async (req, res) => {
         }
 
         // Générer un jeton JWT
-        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        user.tokens = user.tokens.concat({ token })
-        await user.save()
+        const token = jwt.sign({ userId: user._id,role:user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // Envoyer la réponse avec le jeton et les informations utilisateur
         res.json({
@@ -86,21 +74,15 @@ app.post('/connexion', async (req, res) => {
     }
 });
 
-app.get("/dashboard", async (req, res) => {
-    const token = req.headers["authorization"].split(' ')[1]
-    console.log(token);
-        // const token_verified = 
-        await jwt.verify(token, "secret", (err, token_verified) => {
-            if (err) return res.status(200).json({ 'message': "Token absent or not verified" })
-
-            console.log(token_verified);
-            req.userId = token_verified.userId;
-            req.role = token_verified.role;
-            res.status(200).json({ 'message': "token verified" })
-        });
-
+app.get("/dashboard",isAuth, async (req, res) => {
+    res.status(200).json({"message":req.role})
 })
-
+app.get("/admindashboard",isAuth, async (req, res) => {
+    if(req.role=="Utilisateur"){
+        return res.status(400).json({"message":"route non autorisée"})
+    }
+    res.status(200).json({"message":req.role})
+})
 app.listen(82, function () {
     console.log("listening ...")
 })

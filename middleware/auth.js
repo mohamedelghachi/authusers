@@ -4,18 +4,13 @@ const User = require('../models/userModel')
 const auth = async(req, res, next) => {
     const token = req.header('Authorization').replace('Bearer ', '')
     console.log(token);
-    const data = jwt.verify(token, process.env.JWT_SECRET)
-    try {
-        const user = await User.findOne({'tokens.token': token })
-        if (!user) {
-            throw new Error()
+    await jwt.verify(token, "secret",(err,token_verified)=>{
+        if(err){
+            return res.status(400).json({'message':err})
         }
-        req.user = user
-        req.token = token
+        req.userId = token_verified.userId;
+        req.role = token_verified.role;
         next()
-    } catch (error) {
-        res.status(401).send({ error: 'Not authorized to access this resource' })
-    }
-
+    })
 }
 module.exports = auth
