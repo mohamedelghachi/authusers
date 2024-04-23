@@ -23,6 +23,14 @@ const userSchema = new mongoose.Schema({
         type:String,
         enum : ['Administrateur','Utilisateur'],
         default: 'Utilisateur'
+    },
+    tokens:{
+        type:[{
+            token: {
+                type: String,
+                required: true
+            }
+        }]
     }
 })
 
