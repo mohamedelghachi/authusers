@@ -56,7 +56,7 @@ app.post('/connexion', async (req, res) => {
         }
 
         // Générer un jeton JWT
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // Envoyer la réponse avec le jeton et les informations utilisateur
         res.json({
@@ -73,7 +73,20 @@ app.post('/connexion', async (req, res) => {
     }
 });
 
+app.get("/dashboard", async (req, res) => {
+    const token = req.headers["authorization"].split(' ')[1]
+    console.log(token);
+        // const token_verified = 
+        await jwt.verify(token, "secret", (err, token_verified) => {
+            if (err) return res.status(200).json({ 'message': "Token absent or not verified" })
 
+            console.log(token_verified);
+            req.userId = token_verified.userId;
+            req.role = token_verified.role;
+            res.status(200).json({ 'message': "token verified" })
+        });
+
+})
 app.listen(82, function () {
     console.log("listening ...")
 })
